@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Music Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .grid-cell {
+            width: 25px;
+            height: 25px;
+            border-radius: 4px;
+            border: 1px solid #475569;
+            transition: background-color 0.2s;
+        }
+        .grid-cell.active {
+            background-color: #6366f1;
+            border-color: #4338ca;
+        }
+        .grid-cell.current {
+            background-color: #eab308;
+            border-color: #d97706;
+        }
+        .grid-cell:hover {
+            opacity: 0.8;
+        }
+        .drum-cell {
+            background-color: #334155;
+        }
+        .bass-cell {
+            background-color: #1e293b;
+        }
+        .piano-cell {
+            background-color: #3b0764;
+        }
+        .guitar-cell {
+            background-color: #581c87;
+        }
+        .drum-cell.active {
+            background-color: #fca5a5;
+            border-color: #f87171;
+        }
+        .bass-cell.active {
+            background-color: #93c5fd;
+            border-color: #60a5fa;
+        }
+        .piano-cell.active {
+            background-color: #a855f7;
+            border-color: #9333ea;
+        }
+        .guitar-cell.active {
+            background-color: #c084fc;
+            border-color: #a855f7;
+        }
+        .drum-cell.current {
+            background-color: #eab308;
+            border-color: #d97706;
+        }
+        .bass-cell.current {
+            background-color: #eab308;
+            border-color: #d97706;
+        }
+        .piano-cell.current {
+            background-color: #eab308;
+            border-color: #d97706;
+        }
+        .guitar-cell.current {
+            background-color: #eab308;
+            border-color: #d97706;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #475569;
+            border-radius: 5px;
+            outline: none;
+            transition: opacity 0.2s;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #6366f1;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #312e81;
+        }
+        .slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #6366f1;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #312e81;
+        }
+        .btn {
+            @apply px-6 py-2 rounded-lg font-bold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+        }
+        .btn-primary {
+            @apply bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-500/50;
+        }
+        .btn-secondary {
+            @apply bg-slate-700 text-slate-300 hover:bg-slate-600 shadow-md shadow-slate-500/50;
+        }
+        .btn-danger {
+            @apply bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/50;
+        }
+        .title {
+            @apply text-4xl font-bold text-center text-white mb-2;
+        }
+        .subtitle {
+            @apply text-lg text-center text-slate-400 mb-8;
+        }
+        details > summary {
+            cursor: pointer;
+            list-style: none;
+            padding: 0.5rem 0;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+        details > summary:before {
+            content: '►';
+            margin-right: 0.5rem;
+            transition: transform 0.2s;
+        }
+        details[open] > summary:before {
+            content: '▼';
+            transform: rotate(90deg);
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background-color: #1e293b;
+            margin: 15% auto;
+            padding: 24px;
+            border: 1px solid #475569;
+            width: 80%;
+            max-width: 400px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 24px;
+        }
+        /* Input Styles */
+        .input-field {
+            @apply bg-slate-700 border border-slate-600 text-white text-sm rounded-lg block w-full p-2.5;
+        }
+        /* New class for transparent inputs */
+        .transparent-input {
+            background-color: transparent;
+            border: none;
+            outline: none;
+            text-align: center;
+            color: #e2e8f0;
+            width: 4rem; /* or adjust as needed */
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <div class="container mx-auto">
+        <h1 class="title">Web Music Studio</h1>
+        <p class="subtitle">Create and save your beats with a drum machine, piano roll, and bass line.</p>
+
+        <!-- Master Controls -->
+        <div class="bg-slate-800 p-6 rounded-xl shadow-lg mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <button id="playBtn" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path fill-rule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 20.353c-1.25.687-2.779-.236-2.779-1.643V5.653Z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <button id="stopBtn" class="btn btn-secondary" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path fill-rule="evenodd" d="M4.5 7.5a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3v-9Z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <span class="text-xl font-semibold">BPM:</span>
+                <input type="number" id="bpmInput" value="120" min="40" max="240" class="transparent-input w-16 text-center">
+                <input type="range" id="bpmSlider" min="40" max="240" value="120" class="w-40 slider">
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-sm">Loop: <span id="currentLoop">0</span></span>
+                <span class="text-sm">Export Length:</span>
+                <input type="number" id="songLengthInput" value="4" min="1" max="160" class="transparent-input w-16 text-center">
+                <span class="text-sm">loops</span>
+                <label for="songLengthSlider" class="sr-only">Song Length</label>
+                <input type="range" id="songLengthSlider" min="1" max="160" value="4" class="w-24 slider">
+            </div>
+            <div class="flex flex-col md:flex-row items-center gap-4">
+                <input type="text" id="trackNameInput" placeholder="Enter track name" class="input-field w-full md:w-auto">
+                <button id="recordBtn" class="btn btn-primary">Record</button>
+                <a id="downloadBtn" href="#" class="btn btn-secondary hidden" download="my-track.wav">Download WAV</a>
+                <button id="saveBtn" class="btn btn-primary">Save Track</button>
+                <div class="relative w-full md:w-auto">
+                    <button id="loadBtn" class="btn btn-secondary w-full">Load Track</button>
+                    <div id="trackList" class="absolute top-full left-0 mt-2 z-10 w-full bg-slate-900 rounded-lg shadow-xl hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User ID & Status -->
+        <div class="bg-slate-800 p-4 rounded-xl shadow-lg mb-8">
+            <p id="statusMsg" class="text-sm mt-2 text-green-400"></p>
+        </div>
+
+        <!-- Instrument Sections -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 mb-8">
+
+            <!-- Drum Machine -->
+            <details open class="bg-slate-800 p-6 rounded-xl shadow-lg">
+                <summary class="text-2xl font-bold mb-4">Drum Machine</summary>
+                <div>
+                    <div class="flex items-center gap-4 mb-4 slider-container justify-between">
+                        <div class="flex items-center gap-4">
+                            <span>Volume</span>
+                            <input type="range" id="drumVol" min="0" max="1" value="0.7" step="0.01" class="w-32 slider">
+                        </div>
+                        <button id="clearDrum" class="btn btn-secondary px-4 py-1 text-sm">Clear</button>
+                    </div>
+                    <div id="drumGrid" class="flex flex-col gap-1"></div>
+                </div>
+            </details>
+
+            <!-- Piano Roll -->
+            <details open class="bg-slate-800 p-6 rounded-xl shadow-lg">
+                <summary class="text-2xl font-bold mb-4">Piano Roll</summary>
+                <div>
+                    <div class="flex items-center gap-4 mb-4 slider-container justify-between">
+                        <div class="flex items-center gap-4">
+                            <span>Volume</span>
+                            <input type="range" id="pianoVol" min="0" max="1" value="0.5" step="0.01" class="w-32 slider">
+                        </div>
+                        <button id="clearPiano" class="btn btn-secondary px-4 py-1 text-sm">Clear</button>
+                    </div>
+                    <div id="pianoGrid" class="flex flex-col gap-1"></div>
+                </div>
+            </details>
+
+            <!-- Bass Line -->
+            <details open class="bg-slate-800 p-6 rounded-xl shadow-lg">
+                <summary class="text-2xl font-bold mb-4">Bass Line</summary>
+                <div>
+                    <div class="flex items-center gap-4 mb-4 slider-container justify-between">
+                        <div class="flex items-center gap-4">
+                            <span>Volume</span>
+                            <input type="range" id="bassVol" min="0" max="1" value="0.6" step="0.01" class="w-32 slider">
+                        </div>
+                        <button id="clearBass" class="btn btn-secondary px-4 py-1 text-sm">Clear</button>
+                    </div>
+                    <div id="bassGrid" class="flex flex-col gap-1"></div>
+                </div>
+            </details>
+
+            <!-- Guitar -->
+            <details open class="bg-slate-800 p-6 rounded-xl shadow-lg">
+                <summary class="text-2xl font-bold mb-4">Guitar</summary>
+                <div>
+                    <div class="flex items-center gap-4 mb-4 slider-container justify-between">
+                        <div class="flex items-center gap-4">
+                            <span>Volume</span>
+                            <input type="range" id="guitarVol" min="0" max="1" value="0.4" step="0.01" class="w-32 slider">
+                        </div>
+                        <button id="clearGuitar" class="btn btn-secondary px-4 py-1 text-sm">Clear</button>
+                    </div>
+                    <div id="guitarGrid" class="flex flex-col gap-1"></div>
+                </div>
+            </details>
+        </div>
+
+        <!-- Mixer -->
+        <div class="bg-slate-900 p-6 rounded-xl shadow-lg mb-8">
+            <h2 class="text-2xl font-bold mb-4">Mixer</h2>
+            <div class="grid grid-cols-3 md:grid-cols-5 gap-6">
+                <div class="flex flex-col items-center">
+                    <span class="text-sm text-slate-400 mb-2">Drums</span>
+                    <input type="range" id="mixerDrum" min="0" max="1" value="0.7" step="0.01" orient="vertical" class="h-24 w-10 slider">
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-sm text-slate-400 mb-2">Piano</span>
+                    <input type="range" id="mixerPiano" min="0" max="1" value="0.5" step="0.01" orient="vertical" class="h-24 w-10 slider">
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-sm text-slate-400 mb-2">Bass</span>
+                    <input type="range" id="mixerBass" min="0" max="1" value="0.6" step="0.01" orient="vertical" class="h-24 w-10 slider">
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-sm text-slate-400 mb-2">Guitar</span>
+                    <input type="range" id="mixerGuitar" min="0" max="1" value="0.4" step="0.01" orient="vertical" class="h-24 w-10 slider">
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-sm text-slate-400 mb-2">Reverb</span>
+                    <input type="range" id="mixerReverb" min="0" max="1" value="0.3" step="0.01" orient="vertical" class="h-24 w-10 slider">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-xl font-bold text-white mb-4">Confirm Deletion</h3>
+            <p class="text-slate-300">Are you sure you want to delete this track?</p>
+            <div class="modal-buttons">
+                <button id="confirmDeleteBtn" class="btn btn-danger">Delete</button>
+                <button id="cancelDeleteBtn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Message box for alerts
+        function showMessage(message, type = 'success', duration = 3000) {
+            const statusMsg = document.getElementById('statusMsg');
+            statusMsg.textContent = message;
+            if (type === 'error') {
+                statusMsg.classList.remove('text-green-400');
+                statusMsg.classList.add('text-red-400');
+            } else {
+                statusMsg.classList.remove('text-red-400');
+                statusMsg.classList.add('text-green-400');
+            }
+            setTimeout(() => {
+                statusMsg.textContent = '';
+            }, duration);
+        }
+
+        // --- Sequencer & Audio Engine State ---
+        let isPlaying = false;
+        let isRecording = false;
+        let songStep = 0;
+        let bpm = 120;
+        let songLength = 4;
+        let intervalId;
+        const totalSteps = 16;
+        let audioCtx;
+        let nextLoopTime = 0;
+
+        let drumGainNode, pianoGainNode, bassGainNode, guitarGainNode;
+        let dryMasterGain, reverbMasterGain, reverbNode;
+        let bassFilterNode;
+
+        // Instrument data storage
+        const drumPattern = Array(4).fill(null).map(() => Array(totalSteps).fill(false));
+        const pianoPattern = Array(12).fill(null).map(() => Array(totalSteps).fill(false));
+        const bassPattern = Array(8).fill(null).map(() => Array(totalSteps).fill(false));
+        const guitarPattern = Array(8).fill(null).map(() => Array(totalSteps).fill(false));
+        let isDragging = false;
+        let dragInstrument = null;
+
+        // Note frequencies for a wider chromatic scale
+        const noteFrequencies = {
+            'C2': 65.41, 'C#2': 69.30, 'D2': 73.42, 'D#2': 77.78, 'E2': 82.41, 'F2': 87.31, 'F#2': 92.50, 'G2': 98.00, 'G#2': 103.83, 'A2': 110.00, 'A#2': 116.54, 'B2': 123.47,
+            'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'E3': 164.81, 'F3': 174.61, 'F#3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'A3': 220.00, 'A#3': 233.08, 'B3': 246.94,
+            'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
+            'C5': 523.25
+        };
+        const noteNames = Object.keys(noteFrequencies);
+
+        // --- Audio Functions ---
+        function createReverbImpulseResponse(audioCtx) {
+            const duration = 2.0;
+            const sampleRate = audioCtx.sampleRate;
+            const length = sampleRate * duration;
+            const impulse = audioCtx.createBuffer(2, length, sampleRate);
+            const left = impulse.getChannelData(0);
+            const right = impulse.getChannelData(1);
+
+            for (let i = 0; i < length; i++) {
+                left[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
+                right[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3);
+            }
+            return impulse;
+        }
+
+        function setupAudioContext() {
+            if (audioCtx && audioCtx.state === 'running') {
+                return;
+            }
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            dryMasterGain = audioCtx.createGain();
+            reverbMasterGain = audioCtx.createGain();
+            reverbNode = audioCtx.createConvolver();
+            reverbNode.buffer = createReverbImpulseResponse(audioCtx);
+
+            // Create individual gain nodes
+            drumGainNode = audioCtx.createGain();
+            pianoGainNode = audioCtx.createGain();
+            bassGainNode = audioCtx.createGain();
+            guitarGainNode = audioCtx.createGain();
+
+            // Create bass filter
+            bassFilterNode = audioCtx.createBiquadFilter();
+            bassFilterNode.type = 'lowpass';
+            bassFilterNode.frequency.setValueAtTime(350, audioCtx.currentTime);
+
+            // Connect dry signals to dry master gain, then to destination
+            drumGainNode.connect(dryMasterGain);
+            pianoGainNode.connect(dryMasterGain);
+            bassGainNode.connect(bassFilterNode);
+            bassFilterNode.connect(dryMasterGain);
+            guitarGainNode.connect(dryMasterGain);
+            
+            // Connect wet signals to reverb node, then to reverb master gain, then to destination
+            drumGainNode.connect(reverbNode);
+            pianoGainNode.connect(reverbNode);
+            bassGainNode.connect(reverbNode);
+            guitarGainNode.connect(reverbNode);
+            reverbNode.connect(reverbMasterGain);
+
+            dryMasterGain.connect(audioCtx.destination);
+            reverbMasterGain.connect(audioCtx.destination);
+
+            // Set initial volumes
+            drumGainNode.gain.value = parseFloat(document.getElementById('drumVol').value);
+            pianoGainNode.gain.value = parseFloat(document.getElementById('pianoVol').value);
+            bassGainNode.gain.value = parseFloat(document.getElementById('bassVol').value);
+            guitarGainNode.gain.value = parseFloat(document.getElementById('guitarVol').value);
+            reverbMasterGain.gain.value = parseFloat(document.getElementById('mixerReverb').value);
+        }
+
+        // --- Tone Generation Functions ---
+        function playSynthNote(frequency, waveType, duration, gainNode, time) {
+            if (!audioCtx) return;
+            const oscillator = audioCtx.createOscillator();
+            const noteGainNode = audioCtx.createGain();
+
+            if (waveType === 'custom_guitar') {
+                const real = new Float32Array([0, 0.5, 0.4, 0.3, 0.2, 0.1]);
+                const imag = new Float32Array(real.length).fill(0);
+                const periodicWave = audioCtx.createPeriodicWave(real, imag, { disableNormalization: true });
+                oscillator.setPeriodicWave(periodicWave);
+            } else {
+                oscillator.type = waveType;
+            }
+
+            oscillator.frequency.setValueAtTime(frequency, time);
+            
+            const attackTime = 0.01;
+            const releaseTime = 0.15;
+            const now = audioCtx.currentTime;
+
+            // Fix: Ensure time is not negative, especially in release phase
+            const startRampTime = Math.max(now, time + attackTime);
+            const releaseStartTime = Math.max(now, time + duration - releaseTime);
+            const stopTime = Math.max(now, time + duration);
+
+            noteGainNode.gain.cancelScheduledValues(now);
+            noteGainNode.gain.setValueAtTime(0, time);
+            noteGainNode.gain.linearRampToValueAtTime(1, startRampTime);
+            noteGainNode.gain.linearRampToValueAtTime(0, releaseStartTime);
+            noteGainNode.gain.linearRampToValueAtTime(0, stopTime);
+
+            oscillator.connect(noteGainNode).connect(gainNode);
+            oscillator.start(time);
+            oscillator.stop(stopTime);
+        }
+
+        function playKickSound(gainNode, time) {
+            if (!audioCtx) return;
+            const oscillator = audioCtx.createOscillator();
+            const kickGainNode = audioCtx.createGain();
+            
+            oscillator.frequency.setValueAtTime(150, time);
+            oscillator.frequency.exponentialRampToValueAtTime(0.01, time + 0.15); // Shorter duration
+            
+            kickGainNode.gain.setValueAtTime(1, time);
+            kickGainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.15); // Shorter duration
+
+            oscillator.connect(kickGainNode).connect(gainNode);
+            oscillator.start(time);
+            oscillator.stop(time + 0.2); // Stop slightly after the ramp
+        }
+
+        function playDrum(drumType, gainNode, time) {
+            if (!audioCtx) return;
+            // drumType 0 = Crash, 1 = Snare, 2 = Hi-hat, 3 = Kick
+            if (drumType === 3) {
+                playKickSound(gainNode, time);
+                return;
+            }
+
+            const bufferSize = audioCtx.sampleRate * 0.5;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            const drumGainNode = audioCtx.createGain();
+            const filterNode = audioCtx.createBiquadFilter();
+
+            drumGainNode.gain.setValueAtTime(0, time);
+
+            if (drumType === 1) { // Snare
+                drumGainNode.gain.linearRampToValueAtTime(0.7, time + 0.01);
+                drumGainNode.gain.linearRampToValueAtTime(0, time + 0.15);
+                filterNode.type = 'highpass';
+                filterNode.frequency.setValueAtTime(1500, time);
+            } else if (drumType === 2) { // Hi-hat
+                drumGainNode.gain.linearRampToValueAtTime(0.5, time + 0.01);
+                drumGainNode.gain.linearRampToValueAtTime(0, time + 0.05);
+                filterNode.type = 'highpass';
+                filterNode.frequency.setValueAtTime(8000, time);
+            } else if (drumType === 0) { // Crash
+                drumGainNode.gain.linearRampToValueAtTime(0.6, time + 0.01);
+                drumGainNode.gain.linearRampToValueAtTime(0, time + 1.5);
+                filterNode.type = 'highpass';
+                filterNode.frequency.setValueAtTime(6000, time);
+            }
+
+            source.connect(filterNode).connect(drumGainNode).connect(gainNode);
+            source.start(time);
+            source.stop(time + 2);
+        }
+
+        // --- Sequencer Logic ---
+        function scheduleNextLoop() {
+            const timePerStep = 60 / bpm / 4;
+            const loopDuration = timePerStep * totalSteps;
+
+            const pianoNotes = noteNames.slice(noteNames.indexOf('C4'), noteNames.indexOf('B4') + 1);
+            const bassNotes = noteNames.slice(noteNames.indexOf('C2'), noteNames.indexOf('G#2') + 1);
+            const guitarNotes = noteNames.slice(noteNames.indexOf('G3'), noteNames.indexOf('C5') + 1);
+
+            // Schedule drum hits
+            for (let i = 0; i < drumPattern.length; i++) {
+                for (let j = 0; j < totalSteps; j++) {
+                    if (drumPattern[i][j]) {
+                        playDrum(i, drumGainNode, nextLoopTime + j * timePerStep);
+                    }
+                }
+            }
+
+            // Schedule sustained notes for other instruments
+            function scheduleSustainedNotes(pattern, noteMap, gainNode, waveType) {
+                for (let i = 0; i < pattern.length; i++) {
+                    let j = 0;
+                    while (j < totalSteps) {
+                        if (pattern[i][j]) {
+                            let start = j;
+                            let end = j;
+                            while (end + 1 < totalSteps && pattern[i][end + 1]) {
+                                end++;
+                            }
+                            const duration = (end - start + 1) * timePerStep;
+                            const note = noteMap[i];
+                            playSynthNote(noteFrequencies[note], waveType, duration, gainNode, nextLoopTime + start * timePerStep);
+                            j = end + 1;
+                        } else {
+                            j++;
+                        }
+                    }
+                }
+            }
+
+            scheduleSustainedNotes(pianoPattern, pianoNotes, pianoGainNode, 'triangle');
+            scheduleSustainedNotes(bassPattern, bassNotes, bassGainNode, 'sawtooth');
+            scheduleSustainedNotes(guitarPattern, guitarNotes, guitarGainNode, 'custom_guitar');
+
+            nextLoopTime += loopDuration;
+            setTimeout(scheduleNextLoop, loopDuration * 1000);
+        }
+
+        function updateUI() {
+            const currentStepInLoop = songStep % totalSteps;
+            const currentLoop = Math.floor(songStep / totalSteps);
+            document.getElementById('currentLoop').textContent = currentLoop + 1;
+
+            const allGrids = ['drumGrid', 'pianoGrid', 'bassGrid', 'guitarGrid'];
+            allGrids.forEach(gridId => {
+                const cells = document.querySelectorAll(`#${gridId} .grid-row > div:not(:first-child)`);
+                if (songStep > 0) {
+                    const prevStepInLoop = (songStep - 1) % totalSteps;
+                    cells.forEach(cell => {
+                        if (parseInt(cell.dataset.col) === prevStepInLoop) {
+                            cell.classList.remove('current');
+                        }
+                    });
+                }
+                cells.forEach(cell => {
+                    if (parseInt(cell.dataset.col) === currentStepInLoop) {
+                        cell.classList.add('current');
+                    }
+                });
+            });
+            songStep++;
+        }
+
+        function startSequencer() {
+            if (isPlaying) return;
+            isPlaying = true;
+            songStep = 0;
+            setupAudioContext();
+            
+            // Schedule first loop immediately
+            nextLoopTime = audioCtx.currentTime;
+            scheduleNextLoop();
+
+            // Start UI update loop
+            const interval = 60000 / bpm / 4;
+            intervalId = setInterval(updateUI, interval);
+
+            document.getElementById('playBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+        }
+
+        function stopSequencer() {
+            if (!isPlaying) return;
+            isPlaying = false;
+            clearInterval(intervalId);
+            if (audioCtx) {
+                audioCtx.close().then(() => {
+                    audioCtx = null;
+                });
+            }
+            const cells = document.querySelectorAll('.current');
+            cells.forEach(cell => cell.classList.remove('current'));
+            songStep = 0;
+            document.getElementById('currentLoop').textContent = 0;
+            document.getElementById('playBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+        }
+
+        // --- WAV Recording Logic ---
+        async function startRecording() {
+            if (isRecording) {
+                showMessage("Recording already in progress.", 'error');
+                return;
+            }
+            isRecording = true;
+            showMessage("Recording... This may take a moment.", 'success');
+
+            const recordBtn = document.getElementById('recordBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            recordBtn.disabled = true;
+            downloadBtn.classList.add('hidden');
+
+            const filename = (document.getElementById('trackNameInput').value || 'my-track').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            downloadBtn.setAttribute('download', `${filename}.wav`);
+
+            const loops = songLength;
+            const sampleRate = 44100;
+            const timePerStep = 60 / bpm / 4;
+            const loopDuration = timePerStep * totalSteps;
+            const duration = loopDuration * loops;
+            const offlineCtx = new OfflineAudioContext(2, duration * sampleRate, sampleRate);
+            
+            const offlineDryMasterGain = offlineCtx.createGain();
+            const offlineReverbMasterGain = offlineCtx.createGain();
+            const offlineReverbNode = offlineCtx.createConvolver();
+            offlineReverbNode.buffer = createReverbImpulseResponse(offlineCtx);
+
+            const offlineDrumGain = offlineCtx.createGain();
+            const offlinePianoGain = offlineCtx.createGain();
+            const offlineBassGain = offlineCtx.createGain();
+            const offlineGuitarGain = offlineCtx.createGain();
+            const offlineBassFilterNode = offlineCtx.createBiquadFilter();
+            offlineBassFilterNode.type = 'lowpass';
+            offlineBassFilterNode.frequency.setValueAtTime(350, offlineCtx.currentTime);
+
+            offlineDrumGain.connect(offlineDryMasterGain);
+            offlinePianoGain.connect(offlineDryMasterGain);
+            offlineBassGain.connect(offlineBassFilterNode);
+            offlineBassFilterNode.connect(offlineDryMasterGain);
+            offlineGuitarGain.connect(offlineDryMasterGain);
+            
+            offlineDrumGain.connect(offlineReverbNode);
+            offlinePianoGain.connect(offlineReverbNode);
+            offlineBassGain.connect(offlineReverbNode);
+            offlineGuitarGain.connect(offlineReverbNode);
+            offlineReverbNode.connect(offlineReverbMasterGain);
+
+            offlineDryMasterGain.connect(offlineCtx.destination);
+            offlineReverbMasterGain.connect(offlineCtx.destination);
+
+            offlineDrumGain.gain.value = parseFloat(document.getElementById('drumVol').value);
+            offlinePianoGain.gain.value = parseFloat(document.getElementById('pianoVol').value);
+            offlineBassGain.gain.value = parseFloat(document.getElementById('bassVol').value);
+            offlineGuitarGain.gain.value = parseFloat(document.getElementById('guitarVol').value);
+            offlineReverbMasterGain.gain.value = parseFloat(document.getElementById('mixerReverb').value);
+            
+            const pianoNotes = noteNames.slice(noteNames.indexOf('C4'), noteNames.indexOf('B4') + 1);
+            const bassNotes = noteNames.slice(noteNames.indexOf('C2'), noteNames.indexOf('G#2') + 1);
+            const guitarNotes = noteNames.slice(noteNames.indexOf('G3'), noteNames.indexOf('C5') + 1);
+
+            let currentTime = 0;
+            for (let loop = 0; loop < loops; loop++) {
+                // Schedule drum hits
+                for (let i = 0; i < drumPattern.length; i++) {
+                    for (let j = 0; j < totalSteps; j++) {
+                        if (drumPattern[i][j]) {
+                            playDrumOffline(i, offlineDrumGain, offlineCtx, currentTime + j * timePerStep);
+                        }
+                    }
+                }
+
+                // Schedule sustained notes
+                function scheduleSustainedNotesOffline(pattern, noteMap, gainNode, waveType, ctx) {
+                    for (let i = 0; i < pattern.length; i++) {
+                        let j = 0;
+                        while (j < totalSteps) {
+                            if (pattern[i][j]) {
+                                let start = j;
+                                let end = j;
+                                while (end + 1 < totalSteps && pattern[i][end + 1]) {
+                                    end++;
+                                }
+                                const duration = (end - start + 1) * timePerStep;
+                                const note = noteMap[i];
+                                playSynthNoteOffline(noteFrequencies[note], waveType, duration, gainNode, ctx, currentTime + start * timePerStep);
+                                j = end + 1;
+                            } else {
+                                j++;
+                            }
+                        }
+                    }
+                }
+                
+                scheduleSustainedNotesOffline(pianoPattern, pianoNotes, offlinePianoGain, 'triangle', offlineCtx);
+                scheduleSustainedNotesOffline(bassPattern, bassNotes, offlineBassGain, 'sawtooth', offlineCtx);
+                scheduleSustainedNotesOffline(guitarPattern, guitarNotes, offlineGuitarGain, 'custom_guitar', offlineCtx);
+                
+                currentTime += loopDuration;
+            }
+
+            function playSynthNoteOffline(frequency, waveType, duration, gainNode, ctx, time) {
+                const oscillator = ctx.createOscillator();
+                const noteGainNode = ctx.createGain();
+                if (waveType === 'custom_guitar') {
+                    const real = new Float32Array([0, 0.5, 0.4, 0.3, 0.2, 0.1]);
+                    const imag = new Float32Array(real.length).fill(0);
+                    const periodicWave = ctx.createPeriodicWave(real, imag, { disableNormalization: true });
+                    oscillator.setPeriodicWave(periodicWave);
+                } else {
+                    oscillator.type = waveType;
+                }
+                oscillator.frequency.setValueAtTime(frequency, time);
+                
+                // Fix: Ensure time is not negative, especially in release phase
+                const startRampTime = Math.max(ctx.currentTime, time + 0.01);
+                const releaseStartTime = Math.max(ctx.currentTime, time + duration - 0.15);
+                const stopTime = Math.max(ctx.currentTime, time + duration);
+
+                noteGainNode.gain.cancelScheduledValues(ctx.currentTime);
+                noteGainNode.gain.setValueAtTime(0, time);
+                noteGainNode.gain.linearRampToValueAtTime(1, startRampTime);
+                noteGainNode.gain.linearRampToValueAtTime(0, releaseStartTime);
+                noteGainNode.gain.linearRampToValueAtTime(0, stopTime);
+
+                oscillator.connect(noteGainNode).connect(gainNode);
+                oscillator.start(time);
+                oscillator.stop(stopTime);
+            }
+
+            function playKickSoundOffline(gainNode, ctx, time) {
+                const oscillator = ctx.createOscillator();
+                const kickGainNode = ctx.createGain();
+                oscillator.frequency.setValueAtTime(150, time);
+                oscillator.frequency.exponentialRampToValueAtTime(0.01, time + 0.15);
+                kickGainNode.gain.setValueAtTime(1, time);
+                kickGainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+                oscillator.connect(kickGainNode).connect(gainNode);
+                oscillator.start(time);
+                oscillator.stop(time + 0.2);
+            }
+
+            function playDrumOffline(drumType, gainNode, ctx, time) {
+                if (drumType === 3) { playKickSoundOffline(gainNode, ctx, time); return; }
+                const bufferSize = ctx.sampleRate * 0.5;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+                const source = ctx.createBufferSource();
+                source.buffer = buffer;
+                const drumGainNode = ctx.createGain();
+                const filterNode = ctx.createBiquadFilter();
+                drumGainNode.gain.setValueAtTime(0, time);
+                if (drumType === 1) {
+                    drumGainNode.gain.linearRampToValueAtTime(0.7, time + 0.01);
+                    drumGainNode.gain.linearRampToValueAtTime(0, time + 0.15);
+                    filterNode.type = 'highpass';
+                    filterNode.frequency.setValueAtTime(1500, time);
+                } else if (drumType === 2) {
+                    drumGainNode.gain.linearRampToValueAtTime(0.5, time + 0.01);
+                    drumGainNode.gain.linearRampToValueAtTime(0, time + 0.05);
+                    filterNode.type = 'highpass';
+                    filterNode.frequency.setValueAtTime(8000, time);
+                } else if (drumType === 0) {
+                    drumGainNode.gain.linearRampToValueAtTime(0.6, time + 0.01);
+                    drumGainNode.gain.linearRampToValueAtTime(0, time + 1.5);
+                    filterNode.type = 'highpass';
+                    filterNode.frequency.setValueAtTime(6000, time);
+                }
+                source.connect(filterNode).connect(drumGainNode).connect(gainNode);
+                source.start(time);
+                source.stop(time + 2);
+            }
+
+            const renderedBuffer = await offlineCtx.startRendering();
+            const blob = bufferToWav(renderedBuffer);
+            const url = URL.createObjectURL(blob);
+
+            downloadBtn.href = url;
+            downloadBtn.classList.remove('hidden');
+            recordBtn.disabled = false;
+            isRecording = false;
+            showMessage("Recording complete! You can now download your track.", 'success');
+        }
+
+        // --- WAV Conversion ---
+        function bufferToWav(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const bufferLength = buffer.length;
+            const bufferData = buffer.getChannelData(0);
+
+            const dataLength = bufferLength * 2;
+            const fileLength = 44 + dataLength;
+
+            const arrayBuffer = new ArrayBuffer(fileLength);
+            const view = new DataView(arrayBuffer);
+
+            let offset = 0;
+            function writeString(str) {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(offset + i, str.charCodeAt(i));
+                }
+                offset += str.length;
+            }
+            function writeUint32(val) { view.setUint32(offset, val, true); offset += 4; }
+            function writeUint16(val) { view.setUint16(offset, val, true); offset += 2; }
+
+            writeString('RIFF');
+            writeUint32(fileLength - 8);
+            writeString('WAVE');
+            writeString('fmt ');
+            writeUint32(16);
+            writeUint16(1);
+            writeUint16(numChannels);
+            writeUint32(sampleRate);
+            writeUint32(sampleRate * numChannels * 2);
+            writeUint16(numChannels * 2);
+            writeUint16(16);
+            writeString('data');
+            writeUint32(dataLength);
+
+            for (let i = 0; i < bufferLength; i++) {
+                const s = Math.max(-1, Math.min(1, bufferData[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                offset += 2;
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        // --- UI & Event Listeners ---
+        function setupUI() {
+            const drumNames = ['Crash', 'Snare', 'Hi-hat', 'Kick'];
+            const pianoNames = noteNames.slice(noteNames.indexOf('C4'), noteNames.indexOf('B4') + 1);
+            const bassNames = noteNames.slice(noteNames.indexOf('C2'), noteNames.indexOf('G#2') + 1);
+            const guitarNames = noteNames.slice(noteNames.indexOf('G3'), noteNames.indexOf('C5') + 1);
+
+            function createGrid(containerId, data, cellClass, labels) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = '';
+                data.forEach((row, rowIndex) => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'grid-row flex items-center mb-1';
+                    const label = document.createElement('span');
+                    label.className = 'text-xs w-12 mr-2 text-right';
+                    label.textContent = labels[labels.length - 1 - rowIndex];
+                    rowDiv.appendChild(label);
+                    row.forEach((cell, colIndex) => {
+                        const cellDiv = document.createElement('div');
+                        cellDiv.className = `${cellClass} grid-cell`;
+                        if (data[rowIndex][colIndex]) {
+                            cellDiv.classList.add('active');
+                        }
+                        cellDiv.dataset.row = rowIndex;
+                        cellDiv.dataset.col = colIndex;
+                        cellDiv.dataset.instrument = containerId.replace('Grid', '');
+                        
+                        if (cellDiv.dataset.instrument === 'drum') {
+                            cellDiv.addEventListener('click', () => {
+                                data[data.length - 1 - parseInt(cellDiv.dataset.row)][parseInt(cellDiv.dataset.col)] = !data[data.length - 1 - parseInt(cellDiv.dataset.row)][parseInt(cellDiv.dataset.col)];
+                                cellDiv.classList.toggle('active');
+                            });
+                        } else {
+                            cellDiv.addEventListener('mousedown', (e) => {
+                                isDragging = true;
+                                dragInstrument = cellDiv.dataset.instrument;
+                                const row = data.length - 1 - parseInt(cellDiv.dataset.row);
+                                const col = parseInt(cellDiv.dataset.col);
+                                
+                                // Toggle state of the starting cell
+                                const newState = !data[row][col];
+                                data[row][col] = newState;
+                                cellDiv.classList.toggle('active', newState);
+                            });
+
+                            cellDiv.addEventListener('mouseover', (e) => {
+                                if (isDragging && dragInstrument === cellDiv.dataset.instrument) {
+                                    const row = data.length - 1 - parseInt(cellDiv.dataset.row);
+                                    const col = parseInt(cellDiv.dataset.col);
+                                    data[row][col] = true;
+                                    cellDiv.classList.add('active');
+                                }
+                            });
+                        }
+                        rowDiv.appendChild(cellDiv);
+                    });
+                    container.appendChild(rowDiv);
+                });
+            }
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                dragInstrument = null;
+            });
+
+            createGrid('drumGrid', drumPattern, 'drum-cell', drumNames);
+            createGrid('pianoGrid', pianoPattern, 'piano-cell', pianoNames);
+            createGrid('bassGrid', bassPattern, 'bass-cell', bassNames);
+            createGrid('guitarGrid', guitarPattern, 'guitar-cell', guitarNames);
+
+            document.getElementById('playBtn').addEventListener('click', startSequencer);
+            document.getElementById('stopBtn').addEventListener('click', stopSequencer);
+            document.getElementById('recordBtn').addEventListener('click', startRecording);
+
+            const bpmSlider = document.getElementById('bpmSlider');
+            const bpmInput = document.getElementById('bpmInput');
+            const songLengthSlider = document.getElementById('songLengthSlider');
+            const songLengthInput = document.getElementById('songLengthInput');
+
+            function updateBpm(value) {
+                bpm = parseInt(value);
+                if (bpm > 240) bpm = 240;
+                if (bpm < 40) bpm = 40;
+                bpmSlider.value = bpm;
+                bpmInput.value = bpm;
+                if (isPlaying) {
+                    stopSequencer();
+                    startSequencer();
+                }
+            }
+
+            function updateSongLength(value) {
+                songLength = parseInt(value);
+                if (songLength > 160) songLength = 160;
+                if (songLength < 1) songLength = 1;
+                songLengthSlider.value = songLength;
+                songLengthInput.value = songLength;
+            }
+
+            bpmSlider.addEventListener('input', (e) => updateBpm(e.target.value));
+            bpmInput.addEventListener('input', (e) => updateBpm(e.target.value));
+            songLengthSlider.addEventListener('input', (e) => updateSongLength(e.target.value));
+            songLengthInput.addEventListener('input', (e) => updateSongLength(e.target.value));
+
+            document.getElementById('clearDrum').addEventListener('click', () => clearPattern('drum'));
+            document.getElementById('clearPiano').addEventListener('click', () => clearPattern('piano'));
+            document.getElementById('clearBass').addEventListener('click', () => clearPattern('bass'));
+            document.getElementById('clearGuitar').addEventListener('click', () => clearPattern('guitar'));
+
+            const volSliders = ['drumVol', 'pianoVol', 'bassVol', 'guitarVol'];
+            volSliders.forEach(id => {
+                document.getElementById(id).addEventListener('input', (e) => {
+                    const instrument = id.replace('Vol', '');
+                    const value = parseFloat(e.target.value);
+                    if (window[instrument + 'GainNode']) {
+                        window[instrument + 'GainNode'].gain.value = value;
+                    }
+                    document.getElementById('mixer' + instrument.charAt(0).toUpperCase() + instrument.slice(1)).value = value;
+                });
+            });
+
+            const mixerSliders = ['mixerDrum', 'mixerPiano', 'mixerBass', 'mixerGuitar', 'mixerReverb'];
+            mixerSliders.forEach(id => {
+                document.getElementById(id).addEventListener('input', (e) => {
+                    const instrument = id.replace('mixer', '');
+                    const value = parseFloat(e.target.value);
+                    if (instrument === 'Reverb' && reverbMasterGain) {
+                        reverbMasterGain.gain.value = value;
+                    } else if (window[instrument.toLowerCase() + 'GainNode']) {
+                        window[instrument.toLowerCase() + 'GainNode'].gain.value = value;
+                    }
+                    if (instrument !== 'Reverb') {
+                        document.getElementById(instrument.toLowerCase() + 'Vol').value = value;
+                    }
+                });
+            });
+
+            document.getElementById('saveBtn').addEventListener('click', saveTrack);
+            document.getElementById('loadBtn').addEventListener('click', () => {
+                const trackList = document.getElementById('trackList');
+                trackList.classList.toggle('hidden');
+                if (!trackList.classList.contains('hidden')) {
+                    loadTrackList();
+                }
+            });
+
+            // Modal logic
+            let trackIndexToDelete = -1;
+            const deleteModal = document.getElementById('deleteModal');
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+
+            confirmDeleteBtn.addEventListener('click', () => {
+                if (trackIndexToDelete !== -1) {
+                    deleteTrack(trackIndexToDelete);
+                    trackIndexToDelete = -1;
+                }
+                deleteModal.style.display = 'none';
+            });
+            cancelDeleteBtn.addEventListener('click', () => {
+                trackIndexToDelete = -1;
+                deleteModal.style.display = 'none';
+            });
+            window.addEventListener('click', (e) => {
+                if (e.target === deleteModal) {
+                    trackIndexToDelete = -1;
+                    deleteModal.style.display = 'none';
+                }
+            });
+
+            window.showDeleteModal = (index) => {
+                trackIndexToDelete = index;
+                deleteModal.style.display = 'block';
+            };
+        }
+
+        function clearPattern(instrument) {
+            let pattern;
+            let containerId;
+            switch(instrument) {
+                case 'drum':
+                    pattern = drumPattern;
+                    containerId = 'drumGrid';
+                    break;
+                case 'piano':
+                    pattern = pianoPattern;
+                    containerId = 'pianoGrid';
+                    break;
+                case 'bass':
+                    pattern = bassPattern;
+                    containerId = 'bassGrid';
+                    break;
+                case 'guitar':
+                    pattern = guitarPattern;
+                    containerId = 'guitarGrid';
+                    break;
+            }
+            if (pattern) {
+                pattern.forEach(row => row.fill(false));
+                document.querySelectorAll(`#${containerId} .grid-cell.active`).forEach(cell => cell.classList.remove('active'));
+                showMessage(`${instrument.charAt(0).toUpperCase() + instrument.slice(1)} pattern cleared!`);
+            }
+        }
+
+        // --- Local Storage Functions ---
+        function saveTrack() {
+            try {
+                const trackName = document.getElementById('trackNameInput').value || 'Untitled Track';
+                const trackData = {
+                    name: trackName,
+                    bpm: bpm,
+                    songLength: songLength,
+                    drumPattern: drumPattern.map(row => [...row]),
+                    pianoPattern: pianoPattern.map(row => [...row]),
+                    bassPattern: bassPattern.map(row => [...row]),
+                    guitarPattern: guitarPattern.map(row => [...row]),
+                    timestamp: new Date().toISOString()
+                };
+                let savedTracks = JSON.parse(localStorage.getItem('musicStudioTracks') || '[]');
+                savedTracks.push(trackData);
+                localStorage.setItem('musicStudioTracks', JSON.stringify(savedTracks));
+                showMessage("Track saved successfully!");
+            } catch (e) {
+                console.error("Error saving track: ", e);
+                showMessage("Error saving track: " + e.message, 'error');
+            }
+        }
+
+        function deleteTrack(index) {
+            try {
+                let savedTracks = JSON.parse(localStorage.getItem('musicStudioTracks') || '[]');
+                if (index >= 0 && index < savedTracks.length) {
+                    savedTracks.splice(index, 1);
+                    localStorage.setItem('musicStudioTracks', JSON.stringify(savedTracks));
+                    showMessage("Track deleted successfully!");
+                    loadTrackList(); // Refresh the list
+                }
+            } catch (e) {
+                console.error("Error deleting track:", e);
+                showMessage("Error deleting track: " + e.message, 'error');
+            }
+        }
+
+        function loadTrackList() {
+            try {
+                const trackListEl = document.getElementById('trackList');
+                trackListEl.innerHTML = '';
+                let savedTracks = JSON.parse(localStorage.getItem('musicStudioTracks') || '[]');
+
+                if (savedTracks.length === 0) {
+                    trackListEl.innerHTML = '<div class="p-4 text-slate-400 text-sm">No saved tracks.</div>';
+                    return;
+                }
+
+                savedTracks.forEach((trackData, index) => {
+                    const trackEl = document.createElement('div');
+                    const date = new Date(trackData.timestamp).toLocaleString();
+                    trackEl.className = 'w-full text-left p-4 hover:bg-slate-800 transition-colors duration-150 rounded-lg flex justify-between items-center';
+                    trackEl.innerHTML = `
+                        <div>
+                            <div class="font-semibold">${trackData.name}</div>
+                            <div class="text-xs text-slate-400">BPM: ${trackData.bpm} | Length: ${trackData.songLength || 4} loops | Saved: ${date.split(',')[0]}</div>
+                        </div>
+                        <button onclick="window.showDeleteModal(${index})" class="text-red-400 hover:text-red-500 transition-colors duration-150 ml-4 p-2 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                                <path fill-rule="evenodd" d="M16.5 4.478a.75.75 0 0 1 .53.22L18 5.75l-4.25 4.25L18 14.25l-1.5 1.5-4.25-4.25-4.25 4.25-1.5-1.5 4.25-4.25L6 5.75l1.5-1.5 4.25 4.25L16.5 4.478Z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    `;
+                    trackEl.addEventListener('click', (e) => {
+                        if (e.target.tagName.toLowerCase() === 'button' || e.target.closest('button')) {
+                            return;
+                        }
+                        applyTrack(trackData);
+                        trackListEl.classList.add('hidden');
+                        showMessage("Track loaded successfully!");
+                    });
+                    trackListEl.appendChild(trackEl);
+                });
+            } catch (e) {
+                console.error("Error loading track list:", e);
+                showMessage("Error loading tracks: " + e.message, 'error');
+            }
+        }
+
+        function applyTrack(data) {
+            stopSequencer();
+            for (let i = 0; i < drumPattern.length; i++) {
+                drumPattern[i] = [...data.drumPattern[i]];
+            }
+            for (let i = 0; i < pianoPattern.length; i++) {
+                pianoPattern[i] = [...data.pianoPattern[i]];
+            }
+            for (let i = 0; i < bassPattern.length; i++) {
+                bassPattern[i] = [...data.bassPattern[i]];
+            }
+            for (let i = 0; i < guitarPattern.length; i++) {
+                guitarPattern[i] = [...data.guitarPattern[i]];
+            }
+
+            bpm = data.bpm;
+            document.getElementById('bpmSlider').value = bpm;
+            document.getElementById('bpmInput').value = bpm;
+
+            songLength = data.songLength || 4;
+            document.getElementById('songLengthSlider').value = songLength;
+            document.getElementById('songLengthInput').value = songLength;
+
+            document.getElementById('trackNameInput').value = data.name || 'Untitled Track';
+
+            setupUI();
+        }
+
+        window.onload = function () {
+            setupUI();
+        };
+
+    </script>
+</body>
+</html>
