@@ -1,5 +1,5 @@
 <div align="center">
-<img src="https://www.google.com/search?q=https://i.imgur.com/lIM3g4d.png" alt="Web Music Studio Logo" width="100"/>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23818cf8;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23f59e0b;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='20' fill='%231e293b'/%3E%3Cpath d='M25 75 C 40 55, 60 55, 75 75' stroke='url(%23grad)' stroke-width='8' fill='none' stroke-linecap='round'/%3E%3Cpath d='M25 60 C 40 40, 60 40, 75 60' stroke='%23e2e8f0' stroke-width='8' fill='none' stroke-linecap='round'/%3E%3Cpath d='M25 45 C 40 25, 60 25, 75 45' stroke='url(%23grad)' stroke-width='8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" type="image/svg+xml">
 <h1>Web Music Studio</h1>
 </div>
 
