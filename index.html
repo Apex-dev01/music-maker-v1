@@ -41,7 +41,7 @@
           <div class="title">Web Music Studio</div>
           <div class="subtitle">Improved sequencer with synths, mixer, WAV export, and robust save/load.</div>
         </div>
-        <div class="small">v1.4 • Single file</div>
+        <div class="small">v1.5 • Single file</div>
       </div>
 
       <!-- Master Controls -->
@@ -64,7 +64,9 @@
 
           <div class="flex items-center gap-3">
             <input id="trackNameInput" type="text" placeholder="Track name" aria-label="Track name" class="transparent-input">
-            <button id="recordBtn" class="btn btn-ghost" aria-label="Export WAV">Export WAV</button>
+            <button id="liveRecordBtn" class="btn btn-ghost" aria-label="Record Live Output">Record Live</button>
+            <a id="downloadLink" class="btn btn-primary hidden" download="recording.wav">Download</a>
+            <button id="exportWavBtn" class="btn btn-ghost" aria-label="Export WAV">Export WAV</button>
             <button id="saveBtn" class="btn btn-primary" aria-label="Save track">Save</button>
             <button id="loadBtn" class="btn btn-ghost" aria-label="Load track">Load</button>
             <button id="resetBtn" class="btn btn-danger" aria-label="Reset Song">Reset</button>
@@ -231,6 +233,10 @@
     let scheduleTimer = null;
     let swing = 0; // percentage 0-60
     let confirmCallback = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let isRecording = false;
+    let mediaStreamDestination = null;
 
     // Instrument patterns
     const drumPattern = Array(4).fill(null).map(()=>Array(totalSteps).fill(false));
@@ -265,7 +271,10 @@
     function ensureAudioContext(){
       if(!audioCtx){
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const master = audioCtx.createGain(); master.gain.value = 0.9; master.connect(audioCtx.destination);
+        mediaStreamDestination = audioCtx.createMediaStreamDestination(); // For live recording
+        const master = audioCtx.createGain(); master.gain.value = 0.9;
+        master.connect(audioCtx.destination); // Connect to speakers
+        master.connect(mediaStreamDestination); // Also connect to recorder stream
         const convolver = audioCtx.createConvolver();
         convolver.buffer = createReverbImpulseResponse(audioCtx);
         const reverbGain = audioCtx.createGain(); reverbGain.gain.value = parseFloat(document.getElementById('mixerReverb').value);
@@ -511,6 +520,64 @@
         });
     }
 
+    // --- Live Recording ---
+    function updateRecordingUI() {
+        const recordBtn = document.getElementById('liveRecordBtn');
+        if (isRecording) {
+            recordBtn.textContent = 'Stop Recording';
+            recordBtn.classList.add('btn-danger');
+            recordBtn.classList.remove('btn-ghost');
+            document.getElementById('downloadLink').classList.add('hidden'); // Hide old download link while recording
+        } else {
+            recordBtn.textContent = 'Record Live';
+            recordBtn.classList.remove('btn-danger');
+            recordBtn.classList.add('btn-ghost');
+        }
+    }
+
+    function toggleLiveRecording() {
+        ensureAudioContext(); // Make sure context and stream destination are ready
+        if (isRecording) {
+            // Stop
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                mediaRecorder.stop();
+            }
+            isRecording = false;
+            updateRecordingUI();
+            showMessage('Recording stopped. Download will be ready shortly.');
+
+        } else {
+            // Start
+            if (!mediaStreamDestination) {
+                showMessage('Could not start recording.', 'error');
+                return;
+            }
+            recordedChunks = [];
+            mediaRecorder = new MediaRecorder(mediaStreamDestination.stream);
+
+            mediaRecorder.ondataavailable = event => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'audio/wav' });
+                const url = URL.createObjectURL(blob);
+                const downloadLink = document.getElementById('downloadLink');
+                const trackName = document.getElementById('trackNameInput').value || 'live-recording';
+                downloadLink.href = url;
+                downloadLink.download = `${trackName}-${new Date().toISOString().slice(0,10)}.wav`;
+                downloadLink.classList.remove('hidden');
+            };
+            
+            mediaRecorder.start();
+            isRecording = true;
+            updateRecordingUI();
+            showMessage('Live recording started...');
+        }
+    }
+
     // --- Rendering helpers ---
     function renderAllGrids(){
       createGrid('drumGrid', drumPattern, drumLabels);
@@ -575,7 +642,8 @@
       
       document.getElementById('saveBtn').addEventListener('click', saveTrack);
       document.getElementById('loadBtn').addEventListener('click', openLoadModal);
-      document.getElementById('recordBtn').addEventListener('click', exportWav);
+      document.getElementById('exportWavBtn').addEventListener('click', exportWav);
+      document.getElementById('liveRecordBtn').addEventListener('click', toggleLiveRecording);
       document.getElementById('resetBtn').addEventListener('click', resetSong);
       document.getElementById('closeModalBtn').addEventListener('click', () => document.getElementById('loadModal').classList.add('hidden'));
       document.getElementById('trackList').addEventListener('click', e => {
